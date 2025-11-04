@@ -107,7 +107,7 @@ def main():
         return  # Exit if no mission data
 
     # Display mission details
-    print("\n""2. Mission Initial Start: ")
+    print("\n2. Mission Initial Start: ")
     print(f" Mission ID: {mission['mission_id']}")  # Unique mission id
     print(f" Start Position: {mission['start_position']}")  # Where drone begins
     print(f"️ Grid Size: {mission['grid_size'][0]} x {mission['grid_size'][1]}")  # Search area dimensions
