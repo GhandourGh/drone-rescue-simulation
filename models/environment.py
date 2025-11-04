@@ -17,7 +17,18 @@ class SearchEnvironment:
         row, col = position
         rows, cols = self.grid_size
 
-        return 0 <= row < rows and 0 <= col < cols and position not in self.obstacles
+        return (0 <= row < rows and
+                0 <= col < cols and
+                position not in self.obstacles)
 
     def has_target(self, position):
         return position in self.targets #checks if position is in targets
+
+    def get_environment_stats(self):
+
+        return {
+            'grid_size': self.grid_size,
+            'targets_count': len(self.targets),
+            'obstacles_count': len(self.obstacles),
+            'search_area': f"{self.grid_size[0]}x{self.grid_size[1]} cells"
+        }

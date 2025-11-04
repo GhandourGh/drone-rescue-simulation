@@ -4,7 +4,7 @@
 class RescueDrone:
     """ This class represents the drone position, battery, found targets and path history"""
     def __init__(self, start_position=(0,0), battery=100):
-        self.distance = 0
+        self.total_distance = 0
         self.position = start_position # drone current position on the grid
         self.battery = battery # Initial drone battery (mission duration limit)
         self.found_targets = [] # Empty list to store found targets - to be filled during the mission
@@ -24,11 +24,12 @@ class RescueDrone:
 
         self.position = new_position
         self.path_history.append(new_position)
-        self.distance = distance
+        self.total_distance += distance
 
-        battery_remaining = round(self.battery - self.distance / 12)
-        battery_drained = round(self.distance / 12)
-        self.battery = battery_remaining
+
+        battery_drained = distance # 1 unit per cell
+        self.battery -= battery_drained
+        battery_remaining = self.battery
 
         print(f"🚁 Drone moved from ({old_row},{old_col}) to {new_position} (distance: {distance})")
         print(f"🔋 Battery drained: {battery_drained} units, Remaining: {battery_remaining} units")
@@ -51,9 +52,9 @@ class RescueDrone:
         """
         return{ #retun dictionary will all critical drone metrics
             'Position': self.position, #cirrent coordinates (Key: Position) (Value: whatever self.position is)
-            'battery': f"{self.battery} units left", # Remaining time
-            'targets_found': len(self.found_targets), # success metric
-            'distance_traveled': len(self.path_history) - 1 # Path efficiency
+            'Battery': f"{self.battery} units", # Remaining time
+            'Targets Found': len(self.found_targets), # success metric
+            'Total Distance Traveled': self.total_distance # Path efficiency
         }
 
 
