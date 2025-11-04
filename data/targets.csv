@@ -1,0 +1,6 @@
+target_id,row,col,priority
+1,5,7,high
+2,12,15,medium
+3,8,3,high
+4,18,18,low
+5,10,12,medium

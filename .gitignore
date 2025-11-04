@@ -27,7 +27,8 @@ wheels/
 *.swo
 
 # Data (optional - include if data files are large)
-data/*.csv
+# Keep example data files for the simulation to work
+# data/*.csv
 
 # Outputs (optional - include if outputs are large)
 outputs/
