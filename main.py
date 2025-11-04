@@ -1,7 +1,95 @@
 # Import all necessary classes and functions
+import argparse
+import sys
 from models.drone import RescueDrone
 from models.environment import SearchEnvironment
 from utils.data_loader import load_mission_data, load_targets_data
+
+
+def show_help():
+    """Display detailed help information about the simulation capabilities"""
+    help_text = """
+╔════════════════════════════════════════════════════════════════╗
+║         DRONE RESCUE SIMULATION - CAPABILITIES GUIDE          ║
+╚════════════════════════════════════════════════════════════════╝
+
+🚁 WHAT CAN THIS SIMULATION DO?
+
+1. DRONE OPERATIONS:
+   ✓ Autonomous navigation across a grid-based search area
+   ✓ Battery management and consumption tracking
+   ✓ Position tracking and path history recording
+   ✓ Target scanning and detection capabilities
+   ✓ Real-time status reporting
+
+2. SEARCH ENVIRONMENT:
+   ✓ Configurable grid-based search areas
+   ✓ Target placement and management
+   ✓ Obstacle detection and avoidance (coming soon)
+   ✓ Position validation within boundaries
+   ✓ Multi-target tracking system
+
+3. MISSION MANAGEMENT:
+   ✓ CSV-based mission configuration loading
+   ✓ Customizable grid sizes
+   ✓ Flexible start positions
+   ✓ Target priority system (high/medium/low)
+   ✓ Multiple targets support
+
+4. DATA & ANALYSIS:
+   ✓ Mission data import from CSV files
+   ✓ Target location configuration
+   ✓ Performance metrics tracking
+   ✓ Path history visualization (planned)
+   ✓ Search efficiency analysis (planned)
+
+5. SEARCH ALGORITHMS (PLANNED):
+   • Parallel Track (Lawnmower pattern)
+   • Expanding Square (Spiral search)
+   • Random Walk (Baseline comparison)
+   • Custom algorithm support
+
+📁 REQUIRED DATA FILES:
+   • data/missions.csv  - Mission configurations
+   • data/targets.csv   - Target locations and priorities
+
+🎮 USAGE:
+   python main.py              - Run simulation
+   python main.py --help       - Show this help
+   python main.py --info       - Show quick capabilities
+   python main.py --demo       - Run demo mission (future)
+
+🔧 CURRENT PHASE: Phase 2 - Data & Integration
+   ✅ Foundation complete
+   🚧 Working on CSV data loaders and integration
+   ⏳ Search algorithms coming next
+
+📖 For more information, see README.MD and PROJECT_CHECKLIST.md
+"""
+    print(help_text)
+
+
+def show_info():
+    """Display quick information about what the simulation can do"""
+    info_text = """
+🚁 DRONE RESCUE SIMULATION - Quick Info
+
+What can I do?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Simulate autonomous drone search & rescue operations
+✓ Navigate drones across configurable grid-based search areas
+✓ Manage battery consumption and track drone movements
+✓ Load mission configurations from CSV files
+✓ Track and locate multiple targets with priority levels
+✓ Monitor real-time drone status and performance
+✓ Provide foundation for search algorithm testing
+
+Current Status: Foundation Complete ✅
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Run with --help for detailed capabilities guide.
+"""
+    print(info_text)
 
 
 def main():
@@ -19,7 +107,7 @@ def main():
         return  # Exit if no mission data
 
     # Display mission details
-    print("\n""2. Mission Initial Start: ")
+    print("\n2. Mission Initial Start: ")
     print(f" Mission ID: {mission['mission_id']}")  # Unique mission id
     print(f" Start Position: {mission['start_position']}")  # Where drone begins
     print(f"️ Grid Size: {mission['grid_size'][0]} x {mission['grid_size'][1]}")  # Search area dimensions
@@ -58,4 +146,24 @@ def main():
 
 # Standard Python practice - run main() when script is executed directly
 if __name__ == "__main__":
-    main()
+    # Set up argument parser for command-line options
+    parser = argparse.ArgumentParser(
+        description='Drone Rescue Simulation - Search and Rescue Operations',
+        add_help=False  # We'll use custom help
+    )
+    parser.add_argument('--help', '-h', action='store_true',
+                        help='Show detailed help and capabilities')
+    parser.add_argument('--info', '-i', action='store_true',
+                        help='Show quick information about capabilities')
+    
+    args = parser.parse_args()
+    
+    # Handle command-line arguments
+    if args.help:
+        show_help()
+        sys.exit(0)
+    elif args.info:
+        show_info()
+        sys.exit(0)
+    else:
+        main()
