@@ -37,14 +37,55 @@ class RescueDrone:
 
         return True# Indicating successful movement (will add validation later)
 
-    def scan_area(self):
+    def scan_area(self, environment):
         """
-        Stimulate the drones scanning procedure around current position
-        Uses sensors to detect targets
+        Scan current position for targets and rescue them.
         """
-        print(f"Scanning area: {self.position}")
+        print(f"🔍 Scanning area at position {self.position}")
 
-        return [] # return empty for now = will implement actual target detection later
+        if environment.has_target(self.position):
+            print(f"🎯 TARGET FOUND at {self.position}!")
+            self.found_targets.append(self.position)
+            environment.remove_target(self.position)
+            return True
+        else:
+            print("No targets found!")
+            return False
+
+    def check_battery_status(self):
+        """
+        Check battery status and return appropriate warning level.
+        """
+        if self.battery <= 0:
+            return "dead ☠︎︎ "
+        elif self.battery <= 20:
+            return "critical ‼️"
+        elif self.battery <= 50:
+            return "low 🚨"
+        else:
+            return "normal"
+
+    def return_to_base(self, base_position):
+        """
+        Emergency return to base when battery is critical.
+
+        Args:
+            base_position (tuple): (row, col) of home base
+
+        Returns:
+            bool: True if successful, False if not enough battery
+        """
+        distance_to_base = abs(self.position[0] - base_position[0]) + abs(self.position[1] - base_position[1])
+
+        if distance_to_base > self.battery:
+            print("❌ CRITICAL: Not enough battery to return to base!")
+            return False
+
+        print(f"🔋 CRITICAL BATTERY - RETURNING TO BASE {base_position}")
+        self.move_to(base_position)
+        return True
+
+
 
     def get_status(self):
         """
@@ -56,6 +97,7 @@ class RescueDrone:
             'Targets Found': len(self.found_targets), # success metric
             'Total Distance Traveled': self.total_distance # Path efficiency
         }
+
 
 
 

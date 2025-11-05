@@ -24,6 +24,13 @@ class SearchEnvironment:
     def has_target(self, position):
         return position in self.targets #checks if position is in targets
 
+    def remove_target(self, position):
+        #Remove the target when found
+        if position in self.targets:
+            self.targets.remove(position)
+            return True
+        return False
+
     def get_environment_stats(self):
 
         return {

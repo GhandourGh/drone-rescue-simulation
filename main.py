@@ -1,5 +1,3 @@
-# Import all necessary classes and functions
-
 from models.drone import RescueDrone
 from models.environment import SearchEnvironment
 from utils.data_loader import load_mission_data, load_targets_data, load_obstacles_data
@@ -39,19 +37,19 @@ def main():
         print("   No targets loaded")
 
     # Load obstacles data from CSV file
-    print("\n4. 🚧 LOADING OBSTACLES DATA...")
+    print("\n5. 🚧 LOADING OBSTACLES DATA...")
     obstacles = load_obstacles_data('data/obstacles.csv')
 
     # Display all loaded obstacles
     if obstacles:
         print(f"\n   Loaded {len(obstacles)} obstacles:")
         for obstacle in obstacles:
-            print(f"   - Obstacle {obstacle['obstacle_id']} at {obstacle['position']} (Type: {obstacle['Type']})")
+            print(f"   - Obstacle {obstacle['obstacle_id']} at {obstacle['position']} (Type: {obstacle['type']})")
     else:
         print("   No obstacles loaded")
 
     # Create the simulation environment and drone
-    print("\n5. BUILDING SIMULATION WORLD")
+    print("\n7. BUILDING SIMULATION WORLD")
     environment = SearchEnvironment(grid_size=mission['grid_size'])
 
     # Place targets in environment
@@ -65,18 +63,11 @@ def main():
         environment.add_obstacle(obstacle['position'])
     print(f"   ✅ Placed {len(obstacles)} obstacles in environment")
 
-    # Obstacle validation test
-    print(f"\n6. 🧪 OBSTACLE VALIDATION TEST:")
-    if obstacles:
-        test_position = obstacles[0]['position']
-        print(f"   Position {test_position} valid? {environment.is_valid_position(test_position)}")
-        print(f"   Free position (0,1) valid? {environment.is_valid_position((0, 1))}")
-    else:
-        print("   No obstacles to test")
+
 
     # Initialize rescue drone
     drone = RescueDrone(start_position=mission['start_position'], battery=200)
-    print(f"\n7. 🚁 DRONE ACTIVATED")
+    print(f"\n8. 🚁 DRONE ACTIVATED")
     print(f"   ✅ Position: {mission['start_position']}")
     print(f"   ✅ Battery: {drone.battery} units")
 

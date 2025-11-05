@@ -75,7 +75,7 @@ def load_obstacles_data(file_path):
                 obstacle = {
                     'obstacle_id': int(row['obstacle_id']),
                     'position': (int(row['row']), int(row['col'])),
-                    'Type': row['type'],
+                    'type': row['type'],
                 }
                 obstacles.append(obstacle)
 

@@ -27,7 +27,7 @@ wheels/
 *.swo
 
 # Data (optional - include if data files are large)
-
+PROJECT_CHECKLIST.md
 
 # Outputs (optional - include if outputs are large)
 outputs/
