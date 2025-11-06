@@ -1,79 +1,68 @@
 class RescueDrone:
-    """This class represents the drone for waypoint navigation"""
-    def __init__(self, start_position=(0,0), battery=200):
-        self.total_distance = 0
+    """Autonomous drone for waypoint navigation and target rescue operations"""
+
+    def __init__(self, start_position=(0, 0), battery=200):
         self.position = start_position
         self.battery = battery
-        self.found_targets = []
         self.path_history = [start_position]
+        self.found_targets = []
         self.waypoints = []
         self.current_waypoint_index = 0
+        self.total_distance = 0
 
     def move_to(self, new_position):
+        """Move drone to new grid position and update tracking metrics"""
         old_row, old_col = self.position
         new_row, new_col = new_position
-        distance = abs(new_row - old_row) + abs(new_col - old_col)
 
+        distance = abs(new_row - old_row) + abs(new_col - old_col)
         self.position = new_position
         self.path_history.append(new_position)
         self.total_distance += distance
+        self.battery -= distance
 
-        battery_drained = distance
-        self.battery -= battery_drained
-
-        print(f"🚁 Drone moved from ({old_row},{old_col}) to {new_position} (distance: {distance})")
-        print(f"🔋 Battery drained: {battery_drained} units, Remaining: {self.battery} units")
+        print(f"🚁 Moved to {new_position} | Battery: {self.battery}")
         return True
 
     def scan_area(self, environment):
-        print(f"🔍 Scanning area at position {self.position}")
-
+        """Scan current position for targets and collect if found"""
         if environment.has_target(self.position):
-            print(f"🎯 TARGET FOUND at {self.position}!")
+            print(f"🎯 Target found at {self.position}")
             self.found_targets.append(self.position)
             environment.remove_target(self.position)
             return True
-        else:
-            print("No targets found!")
-            return False
+        return False
 
     def check_battery_status(self):
+        """Return current battery status level"""
         if self.battery <= 0:
-            return "dead ☠︎︎ "
+            return "dead"
         elif self.battery <= 20:
-            return "critical ‼️"
+            return "critical"
         elif self.battery <= 50:
-            return "low 🚨"
+            return "low"
         else:
             return "normal"
 
-    def return_to_base(self, base_position):
-        distance_to_base = abs(self.position[0] - base_position[0]) + abs(self.position[1] - base_position[1])
-
-        if distance_to_base > self.battery:
-            print("❌ CRITICAL: Not enough battery to return to base!")
-            return False
-
-        print(f"🔋 CRITICAL BATTERY - RETURNING TO BASE {base_position}")
-        self.move_to(base_position)
-        return True
-
     def set_waypoints(self, waypoint_list):
+        """Assign waypoints for navigation mission"""
         self.waypoints = [wp['position'] for wp in waypoint_list]
-        print(f"🎯 Drone assigned {len(self.waypoints)} waypoints")
 
     def get_next_waypoint_position(self, current_position):
+        """Calculate next position toward current waypoint"""
         if self.current_waypoint_index >= len(self.waypoints):
-            print("✅ All waypoints visited!")
+            print("✅ Mission complete - all waypoints visited")
             return None
 
         target = self.waypoints[self.current_waypoint_index]
 
+        # Advance to next waypoint if current reached
         if current_position == target:
-            print(f"🎯 Reached waypoint {self.current_waypoint_index + 1} at {target}")
+            print(f"📍 Reached waypoint {self.current_waypoint_index + 1}")
             self.current_waypoint_index += 1
             return self.get_next_waypoint_position(current_position)
 
+        # Move one step toward target waypoint
         current_row, current_col = current_position
         target_row, target_col = target
 
@@ -89,11 +78,12 @@ class RescueDrone:
         return current_position
 
     def get_status(self):
+        """Return current drone status metrics"""
         return {
             'Position': self.position,
-            'Battery': f"{self.battery} units",
+            'Battery': self.battery,
             'Targets Found': len(self.found_targets),
-            'Total Distance Traveled': self.total_distance
+            'Distance Traveled': self.total_distance
         }
 
 

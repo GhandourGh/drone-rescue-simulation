@@ -1,11 +1,7 @@
 import csv
-def load_mission_data(file_path):
-    """
-    Load mission configuration from CSV file.
-    Contains drone start position, grid size, and mission targets.
-    """
-    print(f"\n1. Loading mission configuration from {file_path}...")
 
+def load_mission_data(file_path):
+    """Load mission configuration from CSV file"""
     try:
         with open(file_path, 'r') as file:
             reader = csv.DictReader(file)
@@ -17,30 +13,21 @@ def load_mission_data(file_path):
                 'grid_size': (int(first_row['grid_size']), int(first_row['grid_size'])),
                 'targets_to_find': int(first_row['targets_to_find'])
             }
-
-            print(f"✅ Mission configuration loaded successfully")
             return mission_data
 
     except FileNotFoundError:
-        print("❌ ERROR: Mission configuration file not found")
+        print("❌ Mission configuration file not found")
         return None
     except Exception as e:
-        print(f"❌ ERROR reading mission file: {e}")
+        print(f"❌ Error reading mission file: {e}")
         return None
 
-
 def load_targets_data(file_path):
-    """
-    Load target data including positions and priority levels.
-    Each target has coordinates and rescue priority (high/medium/low).
-    """
-    print(f"\n4. Loading targets data from {file_path}...")
+    """Load target positions from CSV file"""
     targets = []
-
     try:
         with open(file_path, 'r') as file:
             reader = csv.DictReader(file)
-
             for row in reader:
                 target = {
                     'target_id': int(row['target_id']),
@@ -48,49 +35,40 @@ def load_targets_data(file_path):
                     'priority': row['priority']
                 }
                 targets.append(target)
-
-            print(f"✅ Successfully loaded {len(targets)} targets")
             return targets
 
     except FileNotFoundError:
-        print("❌ ERROR: Targets file not found")
+        print("❌ Targets file not found")
         return []
     except Exception as e:
-        print(f"❌ ERROR reading targets file: {e}")
+        print(f"❌ Error reading targets file: {e}")
         return []
 
-
 def load_obstacles_data(file_path):
-    print(f"\n6. Loading obstacles data from {file_path}...")
+    """Load obstacle positions from CSV file"""
     obstacles = []
-
     try:
         with open(file_path, 'r') as file:
             reader = csv.DictReader(file)
-
             for row in reader:
-
                 obstacle = {
                     'obstacle_id': int(row['obstacle_id']),
                     'position': (int(row['row']), int(row['col'])),
-                    'type': row['type'],
+                    'type': row['type']
                 }
                 obstacles.append(obstacle)
-            print(f" Successfully loaded {len(obstacles)} obstacles")
             return obstacles
 
     except FileNotFoundError:
-        print("❌ ERROR: obstacle file not found")
+        print("❌ Obstacles file not found")
         return []
     except Exception as e:
-        print(f"❌ ERROR reading obstacles file: {e}")
+        print(f"❌ Error reading obstacles file: {e}")
         return []
 
-
 def load_waypoints_data(file_path):
-    print(f"\n Loading waypoints data from {file_path}...")
+    """Load waypoint positions from CSV file"""
     waypoints = []
-
     try:
         with open(file_path, 'r') as file:
             reader = csv.DictReader(file)
@@ -98,15 +76,14 @@ def load_waypoints_data(file_path):
                 waypoint = {
                     'waypoint_id': int(row['waypoint_id']),
                     'position': (int(row['row']), int(row['col'])),
-                    'priority': row['priority'],
+                    'priority': row['priority']
                 }
                 waypoints.append(waypoint)
-            print(f"✅ Successfully loaded {len(waypoints)} waypoints")
             return waypoints
 
     except FileNotFoundError:
-        print("❌ ERROR: waypoint file not found")
+        print("❌ Waypoints file not found")
         return []
     except Exception as e:
-        print(f"❌ ERROR reading waypoint file: {e}")
+        print(f"❌ Error reading waypoints file: {e}")
         return []
