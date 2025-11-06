@@ -175,6 +175,7 @@ class SimulationPlotter:
             ax.plot(xs, ys, "-", alpha=0.7, linewidth=2.2, color=color,
                     zorder=6, label=f"Drone Path ({color})")
 
+
     def _draw_drone_position(self, ax, position, color, drone_id):
         """Draw current drone position with assigned color and ID"""
         r, c = position
