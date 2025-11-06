@@ -26,7 +26,7 @@ class ParallelTrackSearch:
         # Obstacle avoidance state
         self.in_avoidance = False
         self.original_row = None
-        self.avoidance_step = 0  # 0=down, 1=forward, 2=up
+        self.avoidance_step = 0  # 1=forward, 2=up
 
     def get_next_position(self, current_position):
         """
@@ -181,30 +181,37 @@ class ParallelTrackSearch:
         if row >= rows:
             return None
         
-        # Try the start column first
-        if self._is_position_valid((row, start_col)):
-            return (row, start_col)
+        # Limit search depth to prevent excessive recursion
+        max_rows_to_search = min(5, rows - row)
+        for row_offset in range(max_rows_to_search):
+            current_row = row + row_offset
+            if current_row >= rows:
+                break
+            
+            # Try the start column first
+            if self._is_position_valid((current_row, start_col)):
+                return (current_row, start_col)
+            
+            # Search in the direction we're moving
+            if direction == 'right':
+                for col in range(start_col + 1, cols):
+                    if self._is_position_valid((current_row, col)):
+                        return (current_row, col)
+                # No valid position found going right, try left
+                for col in range(start_col - 1, -1, -1):
+                    if self._is_position_valid((current_row, col)):
+                        return (current_row, col)
+            else:  # direction == 'left'
+                for col in range(start_col - 1, -1, -1):
+                    if self._is_position_valid((current_row, col)):
+                        return (current_row, col)
+                # No valid position found going left, try right
+                for col in range(start_col + 1, cols):
+                    if self._is_position_valid((current_row, col)):
+                        return (current_row, col)
         
-        # Search in the direction we're moving
-        if direction == 'right':
-            for col in range(start_col + 1, cols):
-                if self._is_position_valid((row, col)):
-                    return (row, col)
-            # No valid position found going right, try left
-            for col in range(start_col - 1, -1, -1):
-                if self._is_position_valid((row, col)):
-                    return (row, col)
-        else:  # direction == 'left'
-            for col in range(start_col - 1, -1, -1):
-                if self._is_position_valid((row, col)):
-                    return (row, col)
-            # No valid position found going left, try right
-            for col in range(start_col + 1, cols):
-                if self._is_position_valid((row, col)):
-                    return (row, col)
-        
-        # No valid position in this row, try next row
-        return self._find_valid_position_in_row(row + 1, start_col, direction)
+        # No valid position found within search range
+        return None
 
     def _is_position_valid(self, position):
         """
