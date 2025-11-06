@@ -1,0 +1,6 @@
+nfz_id,top_left_row,top_left_col,bottom_right_row,bottom_right_col,type
+1,2,2,5,5,building
+2,6,1,9,4,forest
+3,10,8,13,11,water
+4,14,14,17,17,building
+5,8,12,11,15,forest
