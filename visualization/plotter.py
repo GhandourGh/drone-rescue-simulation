@@ -25,6 +25,14 @@ class SimulationPlotter:
         for obstacle in environment.obstacles:
             ax.plot(obstacle[1], obstacle[0], 'rs', markersize=10, label='Obstacles', zorder=1)
 
+        if hasattr(drone, 'waypoints') and drone.waypoints:
+            for i, waypoint in enumerate(drone.waypoints):
+                ax.plot(waypoint[1], waypoint[0], 'D', color='purple', markersize=10,
+               label='Waypoints' if i == 0 else "", zorder=2)
+                ax.text(waypoint[1], waypoint[0], f'W{i+1}',
+               fontsize=8, ha='center', va='center', color='white', weight='bold')
+
+
         # 2. Plot targets SECOND
         for target in environment.targets:
             ax.plot(target[1], target[0], 'g*', markersize=15, label='Targets Remaining', zorder=2)

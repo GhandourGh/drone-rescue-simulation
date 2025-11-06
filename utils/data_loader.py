@@ -1,6 +1,4 @@
 import csv
-
-
 def load_mission_data(file_path):
     """
     Load mission configuration from CSV file.
@@ -78,7 +76,7 @@ def load_obstacles_data(file_path):
                     'type': row['type'],
                 }
                 obstacles.append(obstacle)
-
+            print(f" Successfully loaded {len(obstacles)} obstacles")
             return obstacles
 
     except FileNotFoundError:
@@ -86,4 +84,29 @@ def load_obstacles_data(file_path):
         return []
     except Exception as e:
         print(f"❌ ERROR reading obstacles file: {e}")
+        return []
+
+
+def load_waypoints_data(file_path):
+    print(f"\n Loading waypoints data from {file_path}...")
+    waypoints = []
+
+    try:
+        with open(file_path, 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                waypoint = {
+                    'waypoint_id': int(row['waypoint_id']),
+                    'position': (int(row['row']), int(row['col'])),
+                    'priority': row['priority'],
+                }
+                waypoints.append(waypoint)
+            print(f"✅ Successfully loaded {len(waypoints)} waypoints")
+            return waypoints
+
+    except FileNotFoundError:
+        print("❌ ERROR: waypoint file not found")
+        return []
+    except Exception as e:
+        print(f"❌ ERROR reading waypoint file: {e}")
         return []
