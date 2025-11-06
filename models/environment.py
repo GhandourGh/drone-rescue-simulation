@@ -39,3 +39,5 @@ class SearchEnvironment:
             'obstacles_count': len(self.obstacles),
             'search_area': f"{self.grid_size[0]}x{self.grid_size[1]} cells"
         }
+
+

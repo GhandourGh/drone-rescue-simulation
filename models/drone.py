@@ -32,7 +32,7 @@ class RescueDrone:
         battery_remaining = self.battery
 
         print(f"🚁 Drone moved from ({old_row},{old_col}) to {new_position} (distance: {distance})")
-        print(f"🔋 Battery drained: {battery_drained} units, Remaining: {battery_remaining} units")
+        print(f"🔋 Battery drained: {battery_drained} unit/s, Remaining: {battery_remaining} units")
 
 
         return True# Indicating successful movement (will add validation later)
@@ -93,7 +93,7 @@ class RescueDrone:
         """
         return{ #retun dictionary will all critical drone metrics
             'Position': self.position, #cirrent coordinates (Key: Position) (Value: whatever self.position is)
-            'Battery': f"{self.battery} units", # Remaining time
+            'Battery': f"{self.battery} unit/s", # Remaining time
             'Targets Found': len(self.found_targets), # success metric
             'Total Distance Traveled': self.total_distance # Path efficiency
         }
