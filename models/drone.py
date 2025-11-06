@@ -1,7 +1,9 @@
 class RescueDrone:
     """Autonomous drone for waypoint navigation and target rescue operations"""
 
-    def __init__(self, start_position=(0, 0), battery=200):
+    def __init__(self, start_position=(0, 0), battery=2000, drone_id = 1, color ='blue'):
+        self.drone_id = drone_id
+        self.color = color
         self.position = start_position
         self.battery = battery
         self.path_history = [start_position]
@@ -9,6 +11,8 @@ class RescueDrone:
         self.waypoints = []
         self.current_waypoint_index = 0
         self.total_distance = 0
+
+
 
     def move_to(self, new_position):
         """Move drone to new grid position and update tracking metrics"""
@@ -21,13 +25,13 @@ class RescueDrone:
         self.total_distance += distance
         self.battery -= distance
 
-        print(f"🚁 Moved to {new_position} | Battery: {self.battery}")
+        print(f"🚁 Drone {self.drone_id} moved to {new_position} | Battery: {self.battery}")
         return True
 
     def scan_area(self, environment):
         """Scan current position for targets and collect if found"""
         if environment.has_target(self.position):
-            print(f"🎯 Target found at {self.position}")
+            print(f"🎯 Drone {self.drone_id} found target at {self.position}")
             self.found_targets.append(self.position)
             environment.remove_target(self.position)
             return True
@@ -80,6 +84,7 @@ class RescueDrone:
     def get_status(self):
         """Return current drone status metrics"""
         return {
+            'Drone Id': self.drone_id,
             'Position': self.position,
             'Battery': self.battery,
             'Targets Found': len(self.found_targets),
