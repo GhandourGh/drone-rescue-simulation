@@ -1,84 +1,72 @@
-"""
-Matplotlib visualization for drone rescue simulation
-Live path plotting and search coverage visualization
-"""
-import matplotlib.pyplot as plt  # Import plotting library
-
+import matplotlib.pyplot as plt
 
 
 class SimulationPlotter:
     def __init__(self, grid_size):
-        """
-        Initialize the plotter for drone simulation visualization.
+        self.grid_size = grid_size
+        print(f"📊 Plotter initialized for {grid_size[0]}x{grid_size[1]} grid")
 
-        Args:
-            grid_size (tuple): (rows, cols) of the search area
-        """
-        self.grid_size = grid_size  # Store grid dimensions
-        self.fig, self.ax = plt.subplots(figsize=(10, 8))  # Create figure and axes
-        self.setup_plot()  # Initialize the plot layout
+    def _create_plot(self, title, drone, environment, info_text):
+        fig, ax = plt.subplots(figsize=(10, 8))
 
-    def setup_plot(self):
-        """Initialize the plot with grid and labels."""
-        rows, cols = self.grid_size  # Unpack grid size
-        self.ax.set_xlim(-0.5, cols - 0.5)  # Set x-axis limits (columns)
-        self.ax.set_ylim(-0.5, rows - 0.5)  # Set y-axis limits (rows)
-        self.ax.set_aspect('equal')  # Make grid cells square
-        self.ax.grid(True, alpha=0.3)  # Show grid lines with transparency
-        self.ax.set_title('Drone Rescue Simulation - Live Search', fontsize=14, fontweight='bold')  # Plot title
-        self.ax.set_xlabel('Columns')  # X-axis label
-        self.ax.set_ylabel('Rows')  # Y-axis label
-        self.ax.invert_yaxis()  # Flip y-axis so (0,0) is top-left
+        # Setup plot (same as before)
+        rows, cols = self.grid_size
+        ax.set_xlim(-0.5, cols - 0.5)
+        ax.set_ylim(-0.5, rows - 0.5)
+        ax.set_aspect('equal')
+        ax.grid(True, alpha=0.3)
+        ax.set_title(title, fontsize=14, fontweight='bold')
+        ax.set_xlabel('Columns')
+        ax.set_ylabel('Rows')
+        ax.invert_yaxis()
 
-    def update_plot(self, drone, environment, step):
-        """
-        Update the plot with current simulation state.
+        # 🆕 FIXED DRAWING ORDER - most important elements LAST
+        # 1. Plot obstacles FIRST (background)
+        for obstacle in environment.obstacles:
+            ax.plot(obstacle[1], obstacle[0], 'rs', markersize=10, label='Obstacles', zorder=1)
 
-        Args:
-            drone: RescueDrone instance
-            environment: SearchEnvironment instance
-            step (int): Current simulation step
-        """
-        self.ax.clear()  # Clear previous plot elements
-        self.setup_plot()  # Re-setup grid and labels
+        # 2. Plot targets SECOND
+        for target in environment.targets:
+            ax.plot(target[1], target[0], 'g*', markersize=15, label='Targets Remaining', zorder=2)
 
-        # Plot obstacles (red squares)
-        for obstacle in environment.obstacles:  # Loop through each obstacle
-            self.ax.plot(obstacle[1], obstacle[0], 'rs', markersize=10, markeredgecolor='darkred',
-                         # Plot red square at obstacle position
-                         label='Obstacles' if obstacle == environment.obstacles[0] else "")  # Add label only for first obstacle
+        # 3. Plot found targets THIRD
+        for found_target in drone.found_targets:
+            ax.plot(found_target[1], found_target[0], 'bo', markersize=8, alpha=0.7, label='Targets Found', zorder=3)
 
-        # Plot remaining targets (green stars)
-        for target in environment.targets:  # Loop through remaining targets
-            self.ax.plot(target[1], target[0], 'g*', markersize=15,  # Plot green star at target position
-                         label='Targets' if target == environment.targets[0] else "")  # Add label only for first target
+        # 4. Plot drone path FOURTH
+        if len(drone.path_history) > 1:
+            path_x = [pos[1] for pos in drone.path_history]
+            path_y = [pos[0] for pos in drone.path_history]
+            ax.plot(path_x, path_y, 'b-', alpha=0.6, linewidth=2, label='Drone Path', zorder=4)
 
-        # Plot found targets (blue circles)
-        for found_target in drone.found_targets:  # Loop through found targets
-            self.ax.plot(found_target[1], found_target[0], 'bo', markersize=8, alpha=0.5,
-                         # Plot blue circle at found target
-                         label='Found Targets' if found_target == drone.found_targets[0] else "")  # Add label only for first found target
+        # 5. Plot current drone position LAST (on top)
+        ax.plot(drone.position[1], drone.position[0], 'D', color='blue', markersize=12, label='Drone', zorder=5)
 
-        # Plot drone path (blue line)
-        if len(drone.path_history) > 1:  # Check if drone has moved
-            path_x = [pos[1] for pos in drone.path_history]  # Extract all column coordinates
-            path_y = [pos[0] for pos in drone.path_history]  # Extract all row coordinates
-            self.ax.plot(path_x, path_y, 'b-', alpha=0.6, linewidth=2, label='Drone Path')  # Plot blue path line
+        # Rest of the code same...
+        ax.text(0.02, 0.98, info_text, transform=ax.transAxes,
+                verticalalignment='top', fontsize=10,
+                bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
 
-        # Plot current drone position (blue drone)
-        self.ax.plot(drone.position[1], drone.position[0], 'D', color='blue', markersize=10, label='Drone')  # Diamond marker for drone
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys(), loc='upper right')
 
-        # Add info text
-        info_text = f'Step: {step}\nTargets Found: {len(drone.found_targets)}\nBattery: {drone.battery}'  # Create status text
-        self.ax.text(0.02, 0.98, info_text, transform=self.ax.transAxes,  # Position text at top-left
-                     verticalalignment='top', fontsize=10,  # Text alignment and size
-                     bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))  # Text box styling
+        plt.tight_layout()
+        return fig, ax
 
-        # Add legend (only first occurrence of each type)
-        handles, labels = self.ax.get_legend_handles_labels()  # Get all legend items
-        by_label = dict(zip(labels, handles))  # Remove duplicate labels
-        self.ax.legend(by_label.values(), by_label.keys(), loc='upper right')  # Display legend
+    def plot_step(self, drone, environment, step):
+        """Create a static plot for current step"""
+        info_text = f'Step: {step}\nTargets Found: {len(drone.found_targets)}\nBattery: {drone.battery}'
+        fig, ax = self._create_plot(f'Drone Rescue - Step {step}', drone, environment, info_text)
 
-        plt.tight_layout()  # Adjust layout to fit elements
-        plt.pause(0.1)  # Pause to see the animation between steps
+        plt.show(block=False)
+        plt.pause(0.01)
+        plt.close()
 
+    def plot_final_state(self, drone, environment):
+        """Create final static plot that stays open"""
+        info_text = f'Final State\nSteps: {len(drone.path_history)}\nTargets Found: {len(drone.found_targets)}\nBattery: {drone.battery}'
+        fig, ax = self._create_plot('Drone Rescue - Final Mission State', drone, environment, info_text)
+
+        plt.show()
+        print("✅ Final plot displayed!")

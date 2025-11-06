@@ -65,8 +65,6 @@ def main():
         environment.add_obstacle(obstacle['position'])
     print(f"   ✅ Placed {len(obstacles)} obstacles in environment")
 
-
-
     # Initialize rescue drone
     drone = RescueDrone(start_position=mission['start_position'], battery=200)
     print(f"\n8. 🚁 DRONE ACTIVATED")
@@ -82,7 +80,7 @@ def main():
     search_algorithm = ParallelTrackSearch(
         grid_size=mission['grid_size'],
         start_position=mission['start_position'],
-        environment= environment  # 🆕 CRITICAL: Pass environment for obstacle awareness
+        environment=environment  # CRITICAL: Pass environment for obstacle awareness
     )
     print(f"   ✅ Parallel Track search initialized (Obstacle-Aware)")
 
@@ -90,20 +88,17 @@ def main():
     simulation = SimulationEngine(drone, environment, search_algorithm)
     print(f"    ✅ Simulation engine ready")
 
-    # Initialize visualization
-    print(f"\n11. 📊 INITIALIZING VISUALIZATION")
-    plotter = SimulationPlotter(grid_size=mission['grid_size'])
-    print(f"    ✅ Matplotlib visualization ready")
-
-    # 🆕 RUN SIMULATION FOR 20 STEPS
-    print(f"\n12. 🚀 STARTING SIMULATION")
+    # RUN SIMULATION FOR 20 STEPS
+    print(f"\n11. 🚀 STARTING SIMULATION")
     print("    " + "=" * 30)
 
-    for step in range(20):  # Run 20 steps for demo
-        print(f"\n   Step {step + 1}:")
-        should_continue = simulation.run_step()
-        plotter.update_plot(drone, environment, step)
+    plotter = SimulationPlotter(grid_size=mission['grid_size'])
 
+    for step in range(1, 54):  # Run 53 steps for demo
+        print(f"\n   Step {step}:")
+        should_continue = simulation.run_step()
+
+        plotter.plot_step(drone, environment, step)
 
         if not should_continue:
             print("   🛑 Simulation ended early!")
@@ -114,9 +109,13 @@ def main():
         print(f"      Targets: {stats['targets_found']} found, {stats['targets_remaining']} remaining")
         print(f"      Battery: {stats['battery_remaining']} unit/s")
 
-    # 🆕 FINAL MISSION REPORT
+
+
+    # FINAL MISSION REPORT
     print(f"\n12. 📊 MISSION COMPLETION REPORT")
     print("    " + "=" * 30)
+
+
     final_stats = simulation.get_mission_stats()
     for key, value in final_stats.items():
         print(f"    {key.replace('_', ' ').title()}: {value}")
@@ -125,4 +124,3 @@ def main():
 # Standard Python practice - run main() when script is executed directly
 if __name__ == "__main__":
     main()
-

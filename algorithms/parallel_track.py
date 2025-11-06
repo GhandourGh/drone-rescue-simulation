@@ -75,4 +75,3 @@ class ParallelTrackSearch:
             return 0 <= row < rows and 0 <= col < cols
 
 
-
