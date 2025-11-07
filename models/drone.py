@@ -1,10 +1,13 @@
+import numpy as np
+
+
 class RescueDrone:
     """Autonomous drone for waypoint navigation and target rescue operations"""
 
-    def __init__(self, start_position=(0, 0), battery=2000, drone_id = 1, color ='blue'):
+    def __init__(self, start_position=(0, 0), battery=2000, drone_id=1, color='blue'):
         self.drone_id = drone_id
         self.color = color
-        self.position = start_position
+        self.position = start_position  # Keep as tuple
         self.battery = battery
         self.path_history = [start_position]
         self.found_targets = []
@@ -12,15 +15,16 @@ class RescueDrone:
         self.current_waypoint_index = 0
         self.total_distance = 0
 
-
-
     def move_to(self, new_position):
         """Move drone to new grid position and update tracking metrics"""
-        old_row, old_col = self.position
-        new_row, new_col = new_position
+        # Convert to numpy arrays for calculation
+        old_pos = np.array(self.position)
+        new_pos = np.array(new_position)
 
-        distance = abs(new_row - old_row) + abs(new_col - old_col)
-        self.position = new_position
+        # Calculate Manhattan distance using NumPy
+        distance = int(np.sum(np.abs(new_pos - old_pos)))  # Convert back to int
+
+        self.position = new_position  # Store as tuple
         self.path_history.append(new_position)
         self.total_distance += distance
         self.battery -= distance
@@ -50,7 +54,7 @@ class RescueDrone:
 
     def set_waypoints(self, waypoint_list):
         """Assign waypoints for navigation mission"""
-        self.waypoints = [wp['position'] for wp in waypoint_list]
+        self.waypoints = [wp['position'] for wp in waypoint_list]  # Keep as tuples
 
     def get_next_waypoint_position(self, current_position):
         """Calculate next position toward current waypoint"""
@@ -66,20 +70,24 @@ class RescueDrone:
             self.current_waypoint_index += 1
             return self.get_next_waypoint_position(current_position)
 
-        # Move one step toward target waypoint
-        current_row, current_col = current_position
-        target_row, target_col = target
+        # Convert to numpy arrays for direction calculation
+        current_pos = np.array(current_position)
+        target_pos = np.array(target)
 
-        if current_row < target_row:
-            return current_row + 1, current_col
-        elif current_row > target_row:
-            return current_row - 1, current_col
-        elif current_col < target_col:
-            return current_row, current_col + 1
-        elif current_col > target_col:
-            return current_row, current_col - 1
+        # Move one step toward target waypoint using NumPy
+        direction = np.sign(target_pos - current_pos)
 
-        return current_position
+        # Handle the case where one coordinate is already at target
+        if direction[0] == 0 and direction[1] == 0:
+            return current_position  # Already at target
+
+        # Move in the first non-zero direction (prioritize row movement)
+        if direction[0] != 0:
+            next_pos = current_pos + np.array([direction[0], 0])
+        else:
+            next_pos = current_pos + np.array([0, direction[1]])
+
+        return tuple(next_pos.astype(int))  # Convert back to tuple
 
     def get_status(self):
         """Return current drone status metrics"""
@@ -90,6 +98,20 @@ class RescueDrone:
             'Targets Found': len(self.found_targets),
             'Distance Traveled': self.total_distance
         }
+
+    # Bonus: NumPy utility methods (optional)
+    def distance_to_target(self, target_position):
+        """Calculate Manhattan distance to a target position"""
+        current_pos = np.array(self.position)
+        target_pos = np.array(target_position)
+        return int(np.sum(np.abs(target_pos - current_pos)))
+
+    def get_neighbors(self):
+        """Get all valid neighboring positions (useful for pathfinding)"""
+        current_pos = np.array(self.position)
+        directions = np.array([[1, 0], [-1, 0], [0, 1], [0, -1]])
+        neighbors = current_pos + directions
+        return [tuple(pos) for pos in neighbors]
 
 
 

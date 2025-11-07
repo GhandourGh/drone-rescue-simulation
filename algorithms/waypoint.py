@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class WaypointNavigator:
     """Handles drone navigation between waypoints with proper rectangle avoidance"""
 
@@ -5,6 +8,7 @@ class WaypointNavigator:
         self.drone = drone
         self.environment = environment
         self.grid_size = grid_size
+        self.rows, self.cols = grid_size
         self.bypass_route = []
         self.current_bypass_index = 0
         self.visited_positions = set()
@@ -14,7 +18,7 @@ class WaypointNavigator:
         """Get next position with proper NFZ avoidance"""
         # Track visited positions to detect loops
         self.visited_positions.add(current_position)
-        if len(self.visited_positions) > 20:  # Reset if too many positions tracked
+        if len(self.visited_positions) > 20:
             self.visited_positions = set([current_position])
 
         # If we're following a bypass route, continue it
@@ -43,8 +47,8 @@ class WaypointNavigator:
             safe_route = self._find_safe_route_to_waypoint(current_position)
             if safe_route:
                 self.bypass_route = safe_route
-                self.current_bypass_index = 1  # Start from first bypass position
-                return safe_route[0]  # Return first position in bypass route
+                self.current_bypass_index = 1
+                return safe_route[0]
             else:
                 print("🚨 No safe route found, moving to next waypoint")
                 self.drone.current_waypoint_index += 1
@@ -76,19 +80,15 @@ class WaypointNavigator:
         return None
 
     def _try_direct_approach(self, current_pos, target_pos):
-        """Try to find a direct path avoiding NFZs"""
-        # Use simple Bresenham-like line with NFZ avoidance
+        """Try to find a direct path avoiding NFZs - Optimized with NumPy"""
         route = []
-        current = current_pos
+        current = np.array(current_pos)  # Use NumPy for position math
+        target = np.array(target_pos)
 
-        while current != target_pos:
-            # Get all possible next moves
-            possible_moves = [
-                (current[0] + 1, current[1]),  # down
-                (current[0] - 1, current[1]),  # up
-                (current[0], current[1] + 1),  # right
-                (current[0], current[1] - 1),  # left
-            ]
+        while not np.array_equal(current, target):
+            # Get all possible next moves using NumPy directions
+            directions = np.array([[1, 0], [-1, 0], [0, 1], [0, -1]])
+            possible_moves = [tuple(current + dir) for dir in directions]
 
             # Filter valid moves and prioritize moves toward target
             valid_moves = [move for move in possible_moves
@@ -97,17 +97,17 @@ class WaypointNavigator:
             if not valid_moves:
                 break
 
-            # Choose move that gets us closest to target
+            # Choose move that gets us closest to target using NumPy distance
             best_move = min(valid_moves,
-                            key=lambda move: abs(move[0] - target_pos[0]) + abs(move[1] - target_pos[1]))
+                            key=lambda move: np.sum(np.abs(np.array(move) - target)))
 
             route.append(best_move)
-            current = best_move
+            current = np.array(best_move)
 
-            if len(route) > 20:  # Prevent infinite routes
+            if len(route) > 20:
                 break
 
-        return route if current == target_pos else []
+        return route if np.array_equal(current, target) else []
 
     def _try_perimeter_approach(self, current_pos, target_pos):
         """Go around NFZs by following their perimeter"""
@@ -166,7 +166,7 @@ class WaypointNavigator:
                 routes.append(top_route + final_route)
 
         # Try bottom edge route
-        bottom_route = self._build_direct_route(current_pos, (self.grid_size[0] - 1, target_pos[1]))
+        bottom_route = self._build_direct_route(current_pos, (self.rows - 1, target_pos[1]))
         if bottom_route:
             final_route = self._build_direct_route(bottom_route[-1], target_pos)
             if final_route:
@@ -180,7 +180,7 @@ class WaypointNavigator:
                 routes.append(left_route + final_route)
 
         # Try right edge route
-        right_route = self._build_direct_route(current_pos, (target_pos[0], self.grid_size[1] - 1))
+        right_route = self._build_direct_route(current_pos, (target_pos[0], self.cols - 1))
         if right_route:
             final_route = self._build_direct_route(right_route[-1], target_pos)
             if final_route:
@@ -192,16 +192,17 @@ class WaypointNavigator:
 
     def _try_opposite_side_approach(self, current_pos, target_pos):
         """Go to the opposite side of NFZs and approach from there"""
-        # Find direction to target
-        dir_row = 1 if target_pos[0] > current_pos[0] else -1
-        dir_col = 1 if target_pos[1] > current_pos[1] else -1
+        # Find direction to target using NumPy
+        current_arr = np.array(current_pos)
+        target_arr = np.array(target_pos)
+        direction = np.sign(target_arr - current_arr)
 
         # Try approaching from different angles
         approach_points = [
             (target_pos[0], current_pos[1]),  # Same column, target row
             (current_pos[0], target_pos[1]),  # Same row, target column
-            (target_pos[0] + 2 * dir_row, target_pos[1]),  # Beyond target row
-            (target_pos[0], target_pos[1] + 2 * dir_col),  # Beyond target column
+            (target_pos[0] + 2 * int(direction[0]), target_pos[1]),  # Beyond target row
+            (target_pos[0], target_pos[1] + 2 * int(direction[1])),  # Beyond target column
         ]
 
         for approach_point in approach_points:
@@ -214,39 +215,42 @@ class WaypointNavigator:
         return []
 
     def _build_direct_route(self, start, end):
-        """Build a direct route between two points"""
+        """Build a direct route between two points - Optimized with NumPy"""
         route = []
-        current = start
+        current = np.array(start)
+        target = np.array(end)
 
-        while current != end:
-            # Simple direction-based movement
-            next_row = current[0]
-            next_col = current[1]
+        while not np.array_equal(current, target):
+            # Simple direction-based movement using NumPy
+            direction = np.sign(target - current)
 
-            if current[0] < end[0]:
-                next_row += 1
-            elif current[0] > end[0]:
-                next_row -= 1
-            elif current[1] < end[1]:
-                next_col += 1
-            elif current[1] > end[1]:
-                next_col -= 1
+            # Handle case where we're aligned on one axis
+            if direction[0] == 0 and direction[1] == 0:
+                break
 
-            next_pos = (next_row, next_col)
-            if self._is_position_valid(next_pos):
-                route.append(next_pos)
+            if direction[0] != 0:
+                next_pos = current + np.array([direction[0], 0])
+            else:
+                next_pos = current + np.array([0, direction[1]])
+
+            next_pos_tuple = tuple(next_pos)
+
+            if self._is_position_valid(next_pos_tuple):
+                route.append(next_pos_tuple)
                 current = next_pos
             else:
                 break
 
-            if len(route) > 30:  # Safety limit
+            if len(route) > 30:
                 break
 
-        return route if current == end else []
+        return route if np.array_equal(current, target) else []
 
     def _get_direct_safe_path(self, current_pos, target_pos):
-        """Get a single safe move toward target"""
-        # Try all possible moves and pick the best one
+        """Get a single safe move toward target - Optimized with NumPy"""
+        current_arr = np.array(current_pos)
+        target_arr = np.array(target_pos)
+
         possible_moves = [
             (current_pos[0] + 1, current_pos[1]),  # down
             (current_pos[0] - 1, current_pos[1]),  # up
@@ -261,12 +265,12 @@ class WaypointNavigator:
         if not valid_moves:
             # If no valid moves, try to move away to escape stuck situation
             escape_moves = [move for move in possible_moves
-                            if 0 <= move[0] < self.grid_size[0] and 0 <= move[1] < self.grid_size[1]]
+                            if 0 <= move[0] < self.rows and 0 <= move[1] < self.cols]
             return escape_moves[0] if escape_moves else current_pos
 
-        # Choose move that minimizes distance to target
+        # Choose move that minimizes distance to target using NumPy
         best_move = min(valid_moves,
-                        key=lambda move: abs(move[0] - target_pos[0]) + abs(move[1] - target_pos[1]))
+                        key=lambda move: np.sum(np.abs(np.array(move) - target_arr)))
 
         return best_move
 
@@ -300,5 +304,4 @@ class WaypointNavigator:
             return self.environment.is_valid_position(position)
 
         row, col = position
-        rows, cols = self.grid_size
-        return 0 <= row < rows and 0 <= col < cols
+        return 0 <= row < self.rows and 0 <= col < self.cols

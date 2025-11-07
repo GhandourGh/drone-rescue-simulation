@@ -1,19 +1,18 @@
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
-
+import matplotlib as mpl
 
 class SimulationPlotter:
-    """Handles visualization of drone navigation and mission progress"""
+    """Handles visualization of drone navigation and mission progress."""
 
     def __init__(self, grid_size):
         self.grid_size = grid_size  # (rows, cols)
+        self.drone_colors = {}  # Maps drone_id to color for consistent displays
 
-    # ---------- Public API ----------
     def plot_step(self, drones, environment, step):
-        """Display current mission state for multiple drones"""
+        """Display current mission state for multiple drones."""
         total_targets_found = sum(len(drone.found_targets) for drone in drones)
         total_battery = sum(drone.battery for drone in drones)
-
         info_text = (
             f"Step: {step}\n"
             f"Targets Found: {total_targets_found}\n"
@@ -26,10 +25,9 @@ class SimulationPlotter:
         plt.close(fig)
 
     def plot_final_state(self, drones, environment):
-        """Display final mission results for multiple drones"""
+        """Display final mission results for multiple drones."""
         total_targets_found = sum(len(drone.found_targets) for drone in drones)
         total_battery = sum(drone.battery for drone in drones)
-
         info_text = (
             "Mission Complete\n"
             f"Targets Found: {total_targets_found}\n"
@@ -39,83 +37,84 @@ class SimulationPlotter:
         fig, ax = self._create_plot("Mission Complete", drones, environment, info_text)
         plt.show()
 
-    # ---------- Internals ----------
     def _create_plot(self, title, drones, environment, info_text):
-        """Create and configure the mission visualization plot"""
+        """Create and configure the mission visualization plot."""
         rows, cols = self.grid_size
+        fig, ax = plt.subplots(figsize=(12, 10))
+        plt.subplots_adjust(right=0.82)
 
-        # Leave room on the right for legend + info panel
-        fig, ax = plt.subplots(figsize=(10, 8))
-        plt.subplots_adjust(right=0.78)  # reserve right margin
-
-        # Axes / grid styling
+        # Set axes and grid style
         ax.set_xlim(-0.5, cols - 0.5)
         ax.set_ylim(-0.5, rows - 0.5)
         ax.set_aspect("equal")
         ax.invert_yaxis()
-
-        # Ticks: show cell indices clearly
         ax.set_xticks(range(cols))
         ax.set_yticks(range(rows))
         ax.set_xticks([x - 0.5 for x in range(cols + 1)], minor=True)
         ax.set_yticks([y - 0.5 for y in range(rows + 1)], minor=True)
-
-        # Grid: light major grid for cells, faint minor grid for borders
-        ax.grid(True, which="major", linestyle="-", linewidth=0.6, alpha=0.35)
-        ax.grid(True, which="minor", linestyle="-", linewidth=0.4, alpha=0.15)
-
-        # Labels & style
-        ax.set_title(title, fontsize=15, fontweight="bold", pad=12)
-        ax.set_xlabel("Columns", labelpad=8)
-        ax.set_ylabel("Rows", labelpad=8)
-        ax.set_facecolor("#fafafa")
+        ax.grid(True, which="major", linestyle="-", linewidth=1, alpha=0.35, color="#b5b5b5")
+        ax.grid(True, which="minor", linestyle=":", linewidth=0.5, alpha=0.18)
+        ax.set_title(title, fontsize=18, fontweight="bold", pad=16)
+        ax.set_xlabel("Columns")
+        ax.set_ylabel("Rows")
+        ax.set_facecolor("#f9faff")
         for spine in ax.spines.values():
-            spine.set_color("#bbbbbb")
+            spine.set_color("#b8c6d2")
+            spine.set_linewidth(1.2)
 
-        # Draw environment elements in sensible z-order
+        # Draw environment NFZs
         self._draw_obstacles(ax, environment.nfz_rectangles)
 
-        # Use waypoints from first drone (they should all have same waypoints)
-        # Draw waypoints from ALL drones
+        # Build all waypoints—assume all drones share the same set
+        all_waypoints = []
         if drones:
-            all_waypoints = []
             for drone in drones:
                 if hasattr(drone, 'waypoints'):
                     all_waypoints.extend(drone.waypoints)
-            self._draw_waypoints(ax, all_waypoints)
+        # Mark locations where a waypoint and target overlap, for offsetting
+        target_points = set(environment.targets)
+        waypoint_points = set(all_waypoints)
+        overlap_points = target_points & waypoint_points
 
-        self._draw_targets(ax, environment.targets, [target for drone in drones for target in drone.found_targets])
+        # Draw targets first, with offset if necessary
+        self._draw_targets(ax, environment.targets, [target for drone in drones for target in drone.found_targets], overlap_points)
 
-        # Draw paths and positions for all drones
-        for drone in drones:
-            self._draw_drone_path(ax, drone.path_history, drone.color)
-            self._draw_drone_position(ax, drone.position, drone.color, drone.drone_id)
+        # Draw all waypoints above targets; always clearly visible!
+        self._draw_waypoints(ax, all_waypoints)
 
-        # Legend (outside the grid, top-right)
+        # Draw drone paths and positions
+        color_map = mpl.colormaps.get_cmap('tab10')
+        for idx, drone in enumerate(drones):
+            color = self.drone_colors.setdefault(drone.drone_id, color_map(idx % 10))
+            self._draw_drone_path(ax, drone.path_history, color)
+            self._draw_drone_position(ax, drone.position, color, drone.drone_id)
+
+        # Professional, grouped legend
         handles, labels = ax.get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
         ax.legend(
             by_label.values(),
             by_label.keys(),
             loc="upper left",
-            bbox_to_anchor=(1.01, 1.0),
+            bbox_to_anchor=(1.02, 0.98),
             borderaxespad=0.0,
             frameon=True,
-            title="Legend",
+            fontsize=10,
+            title="Legend"
         )
 
-        # Info panel (outside the grid, right side)
+        # Info box
         fig.text(
-            0.985, 0.50, info_text,
-            ha="right", va="center",
-            fontsize=10,
-            bbox=dict(boxstyle="round", facecolor="#e8f1ff", edgecolor="#9ec5fe", alpha=0.9, pad=0.6)
+            0.99, 0.18, info_text,
+            ha="right", va="bottom",
+            fontsize=12,
+            bbox=dict(boxstyle="round,pad=0.7", facecolor="#e4f2ff", edgecolor="#2980b9", alpha=0.87)
         )
 
         return fig, ax
 
     def _draw_obstacles(self, ax, nfz_rectangles):
-        """Draw No-Fly Zones as semi-transparent red rectangles"""
+        """Draw No-Fly Zones as semi-transparent red rectangles."""
         if not nfz_rectangles:
             return
         label_once = True
@@ -127,10 +126,10 @@ class SimulationPlotter:
             rect = Rectangle(
                 (left_col - 0.5, top_row - 0.5),
                 width, height,
-                linewidth=1.8,
-                edgecolor="red",
+                linewidth=2.7,
+                edgecolor="#b61515",
                 facecolor="#f7b4b4",
-                alpha=0.55,
+                alpha=0.5,
                 zorder=1,
                 label="No-Fly Zone" if label_once else None,
             )
@@ -138,49 +137,65 @@ class SimulationPlotter:
             label_once = False
 
     def _draw_waypoints(self, ax, waypoints):
-        """Draw waypoints as purple diamonds with labels"""
+        """Draw waypoints as purple diamonds with large white border, always on top."""
         if not waypoints:
             return
         for i, (r, c) in enumerate(waypoints):
             ax.plot(
-                c, r, marker="D", markersize=9,
-                markerfacecolor="purple", markeredgecolor="white", markeredgewidth=1.2,
-                linestyle="None",
-                zorder=3,
-                label="Waypoint" if i == 0 else None,
+                c, r, marker="D", markersize=13,
+                markerfacecolor="#781C81", markeredgecolor="white", markeredgewidth=3,
+                linestyle="None", zorder=9, label="Waypoint" if i == 0 else None
             )
-            ax.text(c, r, f"W{i + 1}", fontsize=8, ha="center", va="center",
-                    color="white", weight="bold", zorder=4)
+            ax.text(
+                c, r-0.32, f"W{i + 1}", fontsize=10, ha="center", va="center",
+                color="#781C81", fontweight="bold", zorder=10
+            )
 
-    def _draw_targets(self, ax, targets, found_targets):
-        """Draw remaining and found targets"""
-        # Remaining
+    def _draw_targets(self, ax, targets, found_targets, overlap_points=None):
+        """Draw remaining and found targets—offset if overlapping waypoint."""
+        offset = 0.18
+        used_label = {"Target (remaining)": False, "Target (found)": False}
+        # Remaining targets
         if targets:
-            for i, (r, c) in enumerate(targets):
-                ax.plot(c, r, marker="*", markersize=15, linestyle="None",
-                        color="green", alpha=0.9, zorder=4,
-                        label="Target (remaining)" if i == 0 else None)
-        # Found
+            for (r, c) in targets:
+                # If overlap, slightly offset target marker
+                if overlap_points and (r, c) in overlap_points:
+                    tr, tc = r + offset, c + offset
+                else:
+                    tr, tc = r, c
+                label = None if used_label["Target (remaining)"] else "Target (remaining)"
+                ax.plot(tc, tr, marker="*", markersize=18,
+                        linestyle="None", color="green", markeredgecolor="white",
+                        markeredgewidth=2.5, alpha=0.94, zorder=7,
+                        label=label)
+                used_label["Target (remaining)"] = True
+        # Found targets
         if found_targets:
-            for i, (r, c) in enumerate(found_targets):
-                ax.plot(c, r, marker="o", markersize=8, linestyle="None",
-                        color="#1f77b4", alpha=0.85, zorder=5,
-                        label="Target (found)" if i == 0 else None)
+            for (r, c) in found_targets:
+                # If overlap, offset by -offset
+                if overlap_points and (r, c) in overlap_points:
+                    tr, tc = r - offset, c - offset
+                else:
+                    tr, tc = r, c
+                label = None if used_label["Target (found)"] else "Target (found)"
+                ax.plot(tc, tr, marker="p", markersize=15,
+                        linestyle="None", color="#277ab6", markeredgecolor="white",
+                        markeredgewidth=2.5, alpha=0.85, zorder=8,
+                        label=label)
+                used_label["Target (found)"] = True
 
     def _draw_drone_path(self, ax, path_history, color):
-        """Draw drone's traveled path with assigned color"""
+        """Draw drone's path in its assigned color."""
         if len(path_history) > 1:
             xs = [c for (r, c) in path_history]
             ys = [r for (r, c) in path_history]
-            ax.plot(xs, ys, "-", alpha=0.7, linewidth=2.2, color=color,
-                    zorder=6, label=f"Drone Path ({color})")
-
+            ax.plot(xs, ys, "-", alpha=0.83, linewidth=2.9, color=color, zorder=6, label=None)
 
     def _draw_drone_position(self, ax, position, color, drone_id):
-        """Draw current drone position with assigned color and ID"""
+        """Highlight current drone position, filled bold, with ID."""
         r, c = position
-        ax.plot(c, r, marker="D", markersize=12,
-                linestyle="None", color=color,
-                zorder=7, label=f"Drone {drone_id}")
-        ax.text(c, r, str(drone_id), fontsize=8, ha="center", va="center",
-                color="white", weight="bold", zorder=8)
+        ax.plot(c, r, marker="o", markersize=15, linestyle="None", color=color, zorder=10,
+                markeredgecolor='white', markeredgewidth=2.5, label=f"Drone {drone_id}")
+        ax.text(c, r, str(drone_id), fontsize=10, ha="center", va="center",
+                color="white", fontweight="bold", zorder=11)
+
